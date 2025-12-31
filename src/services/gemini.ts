@@ -48,7 +48,7 @@ export async function generateResponse(
   const userContext = buildUserContext(user, conversationHistory)
   const systemPrompt = JESUS_SYSTEM_PROMPT.replace('{context}', userContext)
 
-  const chatHistory = conversationHistory
+  const chatHistory = (conversationHistory || [])
     .slice(-10)
     .reverse()
     .map(msg => ({

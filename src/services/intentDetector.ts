@@ -83,6 +83,9 @@ const intentPatterns: IntentPattern[] = [
 ]
 
 export function detectIntent(message: string): Intent {
+  if (!message || typeof message !== 'string') {
+    return 'conversa_livre'
+  }
   const lower = message.toLowerCase().trim()
 
   for (const { intent, patterns, keywords } of intentPatterns) {
@@ -98,6 +101,9 @@ export function detectIntent(message: string): Intent {
 }
 
 export function isCrisis(message: string): boolean {
+  if (!message || typeof message !== 'string') {
+    return false
+  }
   const crisisPatterns = [
     /suicid/i,
     /me matar/i,
