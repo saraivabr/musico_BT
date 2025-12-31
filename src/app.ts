@@ -7,6 +7,12 @@ import { connectDB } from './services/database'
 // Flows
 import { mainFlow } from './flows/mainFlow'
 import { menuFlow, welcomeFlow } from './flows/menuFlow'
+import { devocionalFlow } from './flows/devocionalFlow'
+import { quizFlow, quizAnswerFlow, quizExitFlow } from './flows/quizFlow'
+import { oracaoFlow, meusPedidosFlow } from './flows/oracaoFlow'
+
+// Modules
+import { startDevocionalScheduler } from './modules/devocional/scheduler'
 
 const main = async () => {
   // Connect MongoDB
@@ -25,6 +31,12 @@ const main = async () => {
   const adapterFlow = createFlow([
     welcomeFlow,
     menuFlow,
+    devocionalFlow,
+    quizFlow,
+    quizAnswerFlow,
+    quizExitFlow,
+    oracaoFlow,
+    meusPedidosFlow,
     mainFlow
   ])
 
@@ -37,6 +49,11 @@ const main = async () => {
 
   // Start HTTP server
   httpServer(+config.port)
+
+  // Start devocional scheduler
+  startDevocionalScheduler(async (phone: string, message: string) => {
+    await adapterProvider.sendMessage(phone, message, {})
+  })
 
   console.log(`
   ╔════════════════════════════════════════╗
