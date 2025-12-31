@@ -15,24 +15,21 @@ import { evangelismoFlow, evangelismoResponseFlow } from './flows/evangelismoFlo
 import { planoFlow, planoSelectFlow, planoProximoFlow } from './flows/planoFlow'
 import { buscaFlow } from './flows/buscaFlow'
 
-// Modules
+// Scheduler
 import { startDevocionalScheduler } from './modules/devocional/scheduler'
 
 const main = async () => {
-  // Connect MongoDB
   await connectDB()
 
-  // Create WhatsApp provider
   const adapterProvider = createProvider(BaileysProvider)
 
-  // Create database adapter
   const adapterDB = new MongoAdapter({
     dbUri: config.mongodb.uri,
     dbName: 'jesus-bot'
   })
 
-  // Create flow
   const adapterFlow = createFlow([
+    // Specific flows first (order matters!)
     welcomeFlow,
     menuFlow,
     devocionalFlow,
@@ -49,31 +46,46 @@ const main = async () => {
     planoSelectFlow,
     planoProximoFlow,
     buscaFlow,
+    // Main flow last (catch-all)
     mainFlow
   ])
 
-  // Create bot
-  const { httpServer } = await createBot({
+  const { handleCtx, httpServer } = await createBot({
     flow: adapterFlow,
     provider: adapterProvider,
     database: adapterDB,
   })
 
-  // Start HTTP server
-  httpServer(+config.port)
-
-  // Start devocional scheduler
-  startDevocionalScheduler(async (phone: string, message: string) => {
+  // Start scheduler
+  startDevocionalScheduler(async (phone, message) => {
     await adapterProvider.sendMessage(phone, message, {})
   })
 
+  // API endpoints
+  adapterProvider.server.post(
+    '/v1/send',
+    handleCtx(async (bot, req, res) => {
+      const { phone, message } = req.body
+      await bot.sendMessage(phone, message, {})
+      return res.end(JSON.stringify({ status: 'sent' }))
+    })
+  )
+
+  httpServer(+config.port)
+
   console.log(`
-  ╔════════════════════════════════════════╗
-  ║     JESUS CRISTO BOT - INICIADO       ║
-  ╠════════════════════════════════════════╣
-  ║  WhatsApp: Aguardando QR Code...      ║
-  ║  HTTP Server: porta ${config.port}              ║
-  ╚════════════════════════════════════════╝
+  ╔═══════════════════════════════════════════════════╗
+  ║       JESUS CRISTO BOT - INICIADO                ║
+  ╠═══════════════════════════════════════════════════╣
+  ║  WhatsApp: Escaneie o QR Code                    ║
+  ║  HTTP Server: porta ${config.port}                        ║
+  ║  MongoDB: Conectado                               ║
+  ║                                                   ║
+  ║  Módulos ativos:                                  ║
+  ║  ✓ Devocional (06:00)  ✓ Quiz      ✓ Oração     ║
+  ║  ✓ Planos             ✓ Evangelismo ✓ Busca     ║
+  ║  ✓ Indicação          ✓ Gemini AI               ║
+  ╚═══════════════════════════════════════════════════╝
   `)
 }
 

@@ -1,44 +1,73 @@
-<p align="center">
-  <a href="https://builderbot.app/">
-    <picture>
-      <img src="https://builderbot.app/assets/thumbnail-vector.png" height="80">
-    </picture>
-    <h2 align="center">BuilderBot</h2>
-  </a>
-</p>
+# Jesus Cristo Bot
 
+Chatbot espiritual para WhatsApp com IA avancada (Google Gemini).
 
+## Funcionalidades
 
-<p align="center">
-  <a aria-label="NPM version" href="https://www.npmjs.com/package/@builderbot/bot">
-    <img alt="" src="https://img.shields.io/npm/v/@builderbot/bot?color=%2300c200&label=%40bot-whatsapp">
-  </a>
-  <a aria-label="Join the community on GitHub" href="https://link.codigoencasa.com/DISCORD">
-    <img alt="" src="https://img.shields.io/discord/915193197645402142?logo=discord">
-  </a>
-</p>
+- **Companheiro Espiritual** - Conversas com sabedoria biblica e empatia
+- **Devocional Diario** - Enviado automaticamente as 6h
+- **Quiz Biblico** - Teste seus conhecimentos
+- **Pedidos de Oracao** - Ore junto com Jesus
+- **Planos de Leitura** - 21 dias, Primeiros Passos
+- **Evangelismo** - Jornada guiada para conhecer Jesus
+- **Busca Biblica** - Encontre versiculos por tema
+- **Indicacao de Amigos** - Ajude quem precisa
 
+## Requisitos
 
-## Getting Started
+- Node.js 20+
+- MongoDB
+- Chave API do Google Gemini
 
-With this library, you can build automated conversation flows agnostic to the WhatsApp provider, set up automated responses for frequently asked questions, receive and respond to messages automatically, and track interactions with customers. Additionally, you can easily set up triggers to expand functionalities limitlessly.
+## Instalacao
+
+```bash
+# Clonar
+git clone <repo>
+cd jesus-cristo-bot
+
+# Instalar
+npm install
+
+# Configurar
+cp .env.example .env
+# Edite o .env
+
+# Iniciar
+npm run dev
+```
+
+## Deploy com Docker
+
+```bash
+export GEMINI_API_KEY=sua_chave
+./scripts/deploy.sh
+```
+
+## Comandos do Bot
+
+| Comando | Descricao |
+|---------|-----------|
+| menu | Ver opcoes |
+| devocional | Versiculo do dia |
+| quiz | Jogar quiz |
+| orar | Pedido de oracao |
+| planos | Planos de leitura |
+| buscar | Buscar na Biblia |
+| indicar | Indicar amigo |
+
+## Arquitetura
 
 ```
-npm create builderbot@latest
+src/
+├── app.ts              # Entrada principal
+├── config/             # Configuracoes
+├── flows/              # Fluxos BuilderBot
+├── modules/            # Modulos (quiz, oracao, etc)
+├── services/           # Gemini, Database
+└── types/              # Tipos TypeScript
 ```
 
+## Licenca
 
-## Documentation
-
-Visit [builderbot](https://builderbot.app/) to view the full documentation.
-
-
-## Official Course
-
-If you want to discover all the functions and features offered by the library you can take the course.
-[View Course](https://app.codigoencasa.com/courses/builderbot?refCode=LEIFER)
-
-
-## Contact Us
-- [💻 Discord](https://link.codigoencasa.com/DISCORD)
-- [👌 𝕏 (Twitter)](https://twitter.com/leifermendez)
+MIT
