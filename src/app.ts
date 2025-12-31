@@ -66,7 +66,9 @@ const main = async () => {
     '/v1/send',
     handleCtx(async (bot, req, res) => {
       const { phone, message } = req.body
-      await bot.sendMessage(phone, message, {})
+      if (bot) {
+        await bot.sendMessage(phone, message, {})
+      }
       return res.end(JSON.stringify({ status: 'sent' }))
     })
   )

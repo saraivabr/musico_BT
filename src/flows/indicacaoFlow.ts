@@ -12,7 +12,7 @@ export const indicacaoFlow = addKeyword<BaileysProvider>(['indicar', 'amigo prec
     }
   )
 
-export const indicacaoPhoneFlow = addKeyword<BaileysProvider>([/^\d/, /^\(/])
+export const indicacaoPhoneFlow = addKeyword<BaileysProvider>(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '('])
   .addAction(async (ctx, { flowDynamic, state, provider }) => {
     const awaitingPhone = await state.get('awaitingReferralPhone')
     if (!awaitingPhone) return
