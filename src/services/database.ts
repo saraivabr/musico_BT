@@ -35,20 +35,23 @@ const userSchema = new Schema<IUser>({
   }
 })
 
-// Conversation Schema
+// Conversation Schema with compound index
 const conversationSchema = new Schema<IConversation>({
   phone: { type: String, required: true, index: true },
-  timestamp: { type: Date, default: Date.now },
+  timestamp: { type: Date, default: Date.now, index: true },
   role: { type: String, enum: ['user', 'assistant'], required: true },
-  content: { type: String, required: true },
+  content: { type: String, required: true, maxlength: 10000 },
   intent: String,
   emotion: String
 })
 
+// Compound index for efficient queries
+conversationSchema.index({ phone: 1, timestamp: -1 })
+
 // Summary Schema
 const summarySchema = new Schema<IConversationSummary>({
   phone: { type: String, required: true, unique: true },
-  summary: String,
+  summary: { type: String, required: true },
   updatedAt: { type: Date, default: Date.now },
   keyTopics: [String]
 })
@@ -57,30 +60,61 @@ export const User = mongoose.model<IUser>('User', userSchema)
 export const Conversation = mongoose.model<IConversation>('Conversation', conversationSchema)
 export const ConversationSummary = mongoose.model<IConversationSummary>('ConversationSummary', summarySchema)
 
+// Phone validation helper
+function validatePhone(phone: string): void {
+  if (!phone || typeof phone !== 'string') {
+    throw new Error('Phone number is required')
+  }
+  // Remove non-digits and check length (10-15 digits for international)
+  const digits = phone.replace(/\D/g, '')
+  if (digits.length < 10 || digits.length > 15) {
+    throw new Error('Invalid phone number format')
+  }
+}
+
 export async function connectDB(): Promise<void> {
   try {
     await mongoose.connect(config.mongodb.uri)
-    console.log('MongoDB conectado com sucesso')
+    console.log('[DB] MongoDB conectado com sucesso')
   } catch (error) {
-    console.error('Erro ao conectar MongoDB:', error)
+    console.error('[DB] Erro ao conectar MongoDB:', error)
     process.exit(1)
   }
 }
 
 export async function getOrCreateUser(phone: string): Promise<IUser> {
-  let user = await User.findOne({ phone })
-  if (!user) {
-    user = await User.create({ phone })
+  validatePhone(phone)
+
+  try {
+    let user = await User.findOne({ phone })
+    if (!user) {
+      user = await User.create({ phone })
+      console.log(`[DB] Novo usuário criado: ${phone}`)
+    }
+    return user
+  } catch (error) {
+    console.error(`[DB] Erro ao buscar/criar usuário ${phone}:`, error)
+    throw error
   }
-  return user
 }
 
 export async function updateUser(phone: string, data: Partial<IUser>): Promise<IUser | null> {
-  return User.findOneAndUpdate(
-    { phone },
-    { ...data, lastInteraction: new Date() },
-    { new: true }
-  )
+  validatePhone(phone)
+
+  // Prevent overwriting system fields
+  const { createdAt, phone: _, ...safeData } = data as any
+
+  try {
+    const user = await User.findOneAndUpdate(
+      { phone },
+      { ...safeData, lastInteraction: new Date() },
+      { new: true }
+    )
+    return user
+  } catch (error) {
+    console.error(`[DB] Erro ao atualizar usuário ${phone}:`, error)
+    throw error
+  }
 }
 
 export async function saveConversation(
@@ -90,12 +124,33 @@ export async function saveConversation(
   intent?: string,
   emotion?: string
 ): Promise<void> {
-  await Conversation.create({ phone, role, content, intent, emotion })
+  validatePhone(phone)
+
+  if (!content || content.length === 0) {
+    throw new Error('Content is required')
+  }
+
+  try {
+    await Conversation.create({ phone, role, content, intent, emotion })
+  } catch (error) {
+    console.error(`[DB] Erro ao salvar conversa ${phone}:`, error)
+    throw error
+  }
 }
 
 export async function getRecentConversations(phone: string, limit = 20): Promise<IConversation[]> {
-  return Conversation.find({ phone })
-    .sort({ timestamp: -1 })
-    .limit(limit)
-    .lean()
+  validatePhone(phone)
+
+  // Clamp limit to reasonable range
+  const safeLimit = Math.min(Math.max(1, limit), 100)
+
+  try {
+    return await Conversation.find({ phone })
+      .sort({ timestamp: -1 })
+      .limit(safeLimit)
+      .lean()
+  } catch (error) {
+    console.error(`[DB] Erro ao buscar conversas ${phone}:`, error)
+    throw error
+  }
 }
