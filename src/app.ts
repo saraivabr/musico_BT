@@ -10,6 +10,10 @@ import { menuFlow, welcomeFlow } from './flows/menuFlow'
 import { devocionalFlow } from './flows/devocionalFlow'
 import { quizFlow, quizAnswerFlow, quizExitFlow } from './flows/quizFlow'
 import { oracaoFlow, meusPedidosFlow } from './flows/oracaoFlow'
+import { indicacaoFlow, indicacaoPhoneFlow } from './flows/indicacaoFlow'
+import { evangelismoFlow, evangelismoResponseFlow } from './flows/evangelismoFlow'
+import { planoFlow, planoSelectFlow, planoProximoFlow } from './flows/planoFlow'
+import { buscaFlow } from './flows/buscaFlow'
 
 // Modules
 import { startDevocionalScheduler } from './modules/devocional/scheduler'
@@ -37,6 +41,14 @@ const main = async () => {
     quizExitFlow,
     oracaoFlow,
     meusPedidosFlow,
+    indicacaoFlow,
+    indicacaoPhoneFlow,
+    evangelismoFlow,
+    evangelismoResponseFlow,
+    planoFlow,
+    planoSelectFlow,
+    planoProximoFlow,
+    buscaFlow,
     mainFlow
   ])
 
