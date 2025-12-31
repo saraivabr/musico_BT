@@ -1,10 +1,14 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const bot_1 = require("@builderbot/bot");
 const provider_baileys_1 = require("@builderbot/provider-baileys");
 const database_mongo_1 = require("@builderbot/database-mongo");
 const config_1 = require("./config");
 const database_1 = require("./services/database");
+const qrcode_terminal_1 = __importDefault(require("qrcode-terminal"));
 // Flows
 const mainFlow_1 = require("./flows/mainFlow");
 const menuFlow_1 = require("./flows/menuFlow");
@@ -19,7 +23,19 @@ const buscaFlow_1 = require("./flows/buscaFlow");
 const scheduler_1 = require("./modules/devocional/scheduler");
 const main = async () => {
     await (0, database_1.connectDB)();
-    const adapterProvider = (0, bot_1.createProvider)(provider_baileys_1.BaileysProvider);
+    const adapterProvider = (0, bot_1.createProvider)(provider_baileys_1.BaileysProvider, {
+        gifPlayback: true,
+        usePairingCode: false,
+        browser: ['Jesus Bot', 'Chrome', '120.0.0'],
+        printQRInTerminal: true,
+    });
+    // QR Code event listener
+    adapterProvider.on('require_action', async (ctx) => {
+        if (ctx.payload?.qr) {
+            console.log('\n📱 ESCANEIE O QR CODE COM O WHATSAPP:\n');
+            qrcode_terminal_1.default.generate(ctx.payload.qr, { small: true });
+        }
+    });
     const adapterDB = new database_mongo_1.MongoAdapter({
         dbUri: config_1.config.mongodb.uri,
         dbName: 'jesus-bot'

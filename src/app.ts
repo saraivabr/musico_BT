@@ -3,6 +3,7 @@ import { BaileysProvider } from '@builderbot/provider-baileys'
 import { MongoAdapter } from '@builderbot/database-mongo'
 import { config } from './config'
 import { connectDB } from './services/database'
+import qrcode from 'qrcode-terminal'
 
 // Flows
 import { mainFlow } from './flows/mainFlow'
@@ -21,7 +22,20 @@ import { startDevocionalScheduler } from './modules/devocional/scheduler'
 const main = async () => {
   await connectDB()
 
-  const adapterProvider = createProvider(BaileysProvider)
+  const adapterProvider = createProvider(BaileysProvider, {
+    gifPlayback: true,
+    usePairingCode: false,
+    browser: ['Jesus Bot', 'Chrome', '120.0.0'],
+    printQRInTerminal: true,
+  })
+
+  // QR Code event listener
+  adapterProvider.on('require_action', async (ctx: { title?: string; instructions?: string[]; payload?: { qr?: string } }) => {
+    if (ctx.payload?.qr) {
+      console.log('\n📱 ESCANEIE O QR CODE COM O WHATSAPP:\n')
+      qrcode.generate(ctx.payload.qr, { small: true })
+    }
+  })
 
   const adapterDB = new MongoAdapter({
     dbUri: config.mongodb.uri,
