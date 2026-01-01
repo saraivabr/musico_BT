@@ -15,38 +15,38 @@ const intentPatterns = [
     },
     {
         intent: 'devocional',
-        patterns: [/devocional|versículo do dia|versiculo|palavra do dia/i],
-        keywords: ['devocional', 'versículo', 'versiculo', 'palavra do dia']
+        patterns: [/p[ií]lula|dica do dia|acelera/i],
+        keywords: ['pilula', 'dica', 'acelera']
     },
     {
         intent: 'quiz',
-        patterns: [/quiz|jogar|jogo|pergunta|desafio bíblico/i],
-        keywords: ['quiz', 'jogar', 'jogo', 'pergunta', 'desafio']
+        patterns: [/quiz|diagn[oó]stico|perguntas rápidas/i],
+        keywords: ['quiz', 'diagnostico', 'diagnóstico', 'pergunta']
     },
     {
         intent: 'oracao',
-        patterns: [/ora comigo|oração|oracao|pedido de oração|ore por/i],
-        keywords: ['oração', 'oracao', 'orar', 'ore', 'pedido']
+        patterns: [/estrat[eé]gia|plano|proposta|brief/i],
+        keywords: ['estrategia', 'estratégia', 'plano', 'proposta', 'briefing']
     },
     {
         intent: 'plano_leitura',
-        patterns: [/plano de leitura|plano bíblico|ler a bíblia|21 dias/i],
-        keywords: ['plano', 'leitura', '21 dias']
+        patterns: [/plano de implementação|sprint|rampa|pipeline/i],
+        keywords: ['plano', 'implementacao', 'implementação', 'sprint', 'pipeline']
     },
     {
         intent: 'busca_biblica',
-        patterns: [/o que a bíblia fala|bíblia diz|versículo sobre/i],
-        keywords: ['bíblia fala', 'bíblia diz', 'versículo sobre']
+        patterns: [/playbook|copy|roteiro|modelo de mensagem/i],
+        keywords: ['playbook', 'copy', 'modelo', 'roteiro']
     },
     {
         intent: 'evangelismo',
-        patterns: [/quero conhecer jesus|aceitar jesus|quem é jesus|como ser salvo/i],
-        keywords: ['conhecer jesus', 'aceitar', 'salvo', 'vida eterna']
+        patterns: [/acelera|m[eé]todo|acelera>ai|como funciona/i],
+        keywords: ['acelera', 'metodo', 'método', 'acelera ai']
     },
     {
         intent: 'indicacao',
-        patterns: [/meu amigo|minha amiga|precisa de ajuda/i],
-        keywords: ['amigo precisa', 'indicar']
+        patterns: [/lead|parceiro|indicar/i],
+        keywords: ['lead', 'indicar', 'parceiro']
     },
     {
         intent: 'midia',

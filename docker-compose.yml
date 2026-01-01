@@ -1,16 +1,17 @@
 version: '3.8'
 
 services:
-  jesus-bot:
+  acelera-bot:
     build: .
-    container_name: jesus-bot
+    container_name: acelera-bot
     restart: unless-stopped
     ports:
       - "3008:3008"
     environment:
       - PORT=3008
-      - MONGODB_URI=mongodb://mongo:27017/jesus-bot
+      - MONGODB_URI=mongodb://mongo:27017/acelera-bot
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - BOT_NAME=Saraiva.AI
     depends_on:
       - mongo
     volumes:
@@ -18,7 +19,7 @@ services:
 
   mongo:
     image: mongo:7
-    container_name: jesus-mongo
+    container_name: acelera-mongo
     restart: unless-stopped
     volumes:
       - mongo_data:/data/db

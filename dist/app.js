@@ -8,25 +8,21 @@ const provider_baileys_1 = require("@builderbot/provider-baileys");
 const database_mongo_1 = require("@builderbot/database-mongo");
 const config_1 = require("./config");
 const database_1 = require("./services/database");
+const wooviPix_1 = require("./services/wooviPix");
 const qrcode_terminal_1 = __importDefault(require("qrcode-terminal"));
 // Flows
-const mainFlow_1 = require("./flows/mainFlow");
+const welcomeFlow_1 = require("./flows/welcomeFlow");
 const menuFlow_1 = require("./flows/menuFlow");
-const devocionalFlow_1 = require("./flows/devocionalFlow");
-const quizFlow_1 = require("./flows/quizFlow");
-const oracaoFlow_1 = require("./flows/oracaoFlow");
-const indicacaoFlow_1 = require("./flows/indicacaoFlow");
-const evangelismoFlow_1 = require("./flows/evangelismoFlow");
-const planoFlow_1 = require("./flows/planoFlow");
-const buscaFlow_1 = require("./flows/buscaFlow");
-// Scheduler
-const scheduler_1 = require("./modules/devocional/scheduler");
+const criarMusicaFlow_1 = require("./flows/criarMusicaFlow");
+const minhasMusicasFlow_1 = require("./flows/minhasMusicasFlow");
+const comprarCreditosFlow_1 = require("./flows/comprarCreditosFlow");
+const mainFlow_1 = require("./flows/mainFlow");
 const main = async () => {
     await (0, database_1.connectDB)();
     const adapterProvider = (0, bot_1.createProvider)(provider_baileys_1.BaileysProvider, {
         gifPlayback: true,
         usePairingCode: false,
-        browser: ['Jesus Bot', 'Chrome', '120.0.0'],
+        browser: ['Musico.AI Bot', 'Chrome', '120.0.0'],
         printQRInTerminal: true,
     });
     // QR Code event listener
@@ -38,26 +34,19 @@ const main = async () => {
     });
     const adapterDB = new database_mongo_1.MongoAdapter({
         dbUri: config_1.config.mongodb.uri,
-        dbName: 'jesus-bot'
+        dbName: 'musico-bot'
     });
     const adapterFlow = (0, bot_1.createFlow)([
         // Specific flows first (order matters!)
-        menuFlow_1.welcomeFlow,
+        welcomeFlow_1.welcomeFlow,
         menuFlow_1.menuFlow,
-        devocionalFlow_1.devocionalFlow,
-        quizFlow_1.quizFlow,
-        quizFlow_1.quizAnswerFlow,
-        quizFlow_1.quizExitFlow,
-        oracaoFlow_1.oracaoFlow,
-        oracaoFlow_1.meusPedidosFlow,
-        indicacaoFlow_1.indicacaoFlow,
-        indicacaoFlow_1.indicacaoPhoneFlow,
-        evangelismoFlow_1.evangelismoFlow,
-        evangelismoFlow_1.evangelismoResponseFlow,
-        planoFlow_1.planoFlow,
-        planoFlow_1.planoSelectFlow,
-        planoFlow_1.planoProximoFlow,
-        buscaFlow_1.buscaFlow,
+        criarMusicaFlow_1.criarMusicaFlow,
+        criarMusicaFlow_1.criarMusicaActionFlow,
+        minhasMusicasFlow_1.minhasMusicasFlow,
+        minhasMusicasFlow_1.reenviarMusicaFlow,
+        comprarCreditosFlow_1.comprarCreditosFlow,
+        comprarCreditosFlow_1.selecionarPacoteFlow,
+        comprarCreditosFlow_1.verificarPagamentoFlow,
         // Main flow last (catch-all)
         mainFlow_1.mainFlow
     ]);
@@ -66,9 +55,24 @@ const main = async () => {
         provider: adapterProvider,
         database: adapterDB,
     });
-    // Start scheduler
-    (0, scheduler_1.startDevocionalScheduler)(async (phone, message) => {
-        await adapterProvider.sendMessage(phone, message, {});
+    // Webhook for Woovi PIX payment confirmation
+    adapterProvider.server.post('/webhook/woovi', async (req, res) => {
+        try {
+            const payload = req.body;
+            const result = (0, wooviPix_1.parseWebhookPayload)(payload);
+            if (result && result.event === 'OPENPIX:TRANSACTION_RECEIVED') {
+                const confirmed = await (0, database_1.confirmPurchaseAndAddCredits)(result.correlationId);
+                if (confirmed) {
+                    // Send confirmation message
+                    await adapterProvider.sendMessage(confirmed.phone, `✅ *Pagamento confirmado!*\n\n+${confirmed.credits} crédito${confirmed.credits > 1 ? 's' : ''} adicionado${confirmed.credits > 1 ? 's' : ''}!\n\nDigite *criar* para fazer sua música! 🎵`, {});
+                }
+            }
+            res.status(200).json({ success: true });
+        }
+        catch (error) {
+            console.error('[WEBHOOK] Erro:', error);
+            res.status(500).json({ error: 'Internal error' });
+        }
     });
     // API endpoints
     adapterProvider.server.post('/v1/send', handleCtx(async (bot, req, res) => {
@@ -81,16 +85,15 @@ const main = async () => {
     httpServer(+config_1.config.port);
     console.log(`
   ╔═══════════════════════════════════════════════════╗
-  ║       JESUS CRISTO BOT - INICIADO                ║
+  ║       MUSICO.AI BOT - INICIADO                   ║
   ╠═══════════════════════════════════════════════════╣
   ║  WhatsApp: Escaneie o QR Code                    ║
   ║  HTTP Server: porta ${config_1.config.port}                        ║
   ║  MongoDB: Conectado                               ║
   ║                                                   ║
-  ║  Módulos ativos:                                  ║
-  ║  ✓ Devocional (06:00)  ✓ Quiz      ✓ Oração     ║
-  ║  ✓ Planos             ✓ Evangelismo ✓ Busca     ║
-  ║  ✓ Indicação          ✓ Gemini AI               ║
+  ║  Modulos ativos:                                  ║
+  ║  * Criar Musica    * Minhas Musicas               ║
+  ║  * Comprar Creditos * Webhook Woovi PIX           ║
   ╚═══════════════════════════════════════════════════╝
   `);
 };

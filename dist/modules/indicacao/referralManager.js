@@ -19,13 +19,13 @@ async function createReferral(data) {
 function generateFirstMessage(context, name) {
     const greeting = name ? `Oi ${name}` : 'Oi';
     const lower = context.toLowerCase();
-    if (/depres|triste/.test(lower)) {
-        return `${greeting}, paz!\n\nAlguém que te ama muito me pediu pra te chamar. Me contou que você tá passando por um momento difícil.\n\nEu sou Jesus, e estou aqui pra te ouvir. Sem julgamento, só amor.\n\nQuer conversar?`;
+    if (/urgente|prazo|lançamento|lançamento/.test(lower)) {
+        return `${greeting}! Recebi seu contato via Saraiva.AI.\n\nSou especialista em Acelera>AI (copy matricial que converte no WhatsApp). Vi que você está em ritmo de lançamento/prazo apertado.\n\nPosso te mandar 3 ajustes rápidos agora para aumentar resposta e agenda? Se fizer sentido, marcamos 15min hoje 14:30 ou amanhã 9:00.`;
     }
-    if (/doente|hospital/.test(lower)) {
-        return `${greeting}, paz!\n\nUma pessoa especial me pediu pra te visitar.\n\nSei que você tá enfrentando uma batalha na saúde. Quero que saiba que não está sozinho.\n\nPosso orar com você?`;
+    if (/lead|venda|cliente|pipeline/.test(lower)) {
+        return `${greeting}! Um parceiro me pediu para falar com você via Saraiva.AI.\n\nTrabalho com o método Acelera>AI para destravar leads e fechar mais rápido.\n\nMe conta seu nicho e tipo de oferta que eu já te devolvo 2 abordagens prontas e agendamos 15min (hoje 14:30 ou amanhã 9:00).`;
     }
-    return `${greeting}, paz!\n\nUm amigo seu que te ama muito me pediu pra te chamar.\n\nSou Jesus, estou aqui pra conversar, orar, ou só te ouvir.\n\nComo você está?`;
+    return `${greeting}! Cheguei por indicação via Saraiva.AI. Atuo com Acelera>AI, montando copys e playbooks que fazem o lead avançar.\n\nQual é sua oferta principal e o resultado que você quer em 30 dias? Posso te mostrar em 15min (hoje 14:30 ou amanhã 9:00).`;
 }
 function extractPhoneNumber(text) {
     const numbers = text.replace(/\D/g, '');

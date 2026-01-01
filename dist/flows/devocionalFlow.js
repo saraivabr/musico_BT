@@ -3,18 +3,20 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.devocionalFlow = void 0;
 const bot_1 = require("@builderbot/bot");
 const gemini_1 = require("../services/gemini");
-exports.devocionalFlow = (0, bot_1.addKeyword)(['devocional', 'versículo', 'versiculo', 'palavra do dia', '1'])
+exports.devocionalFlow = (0, bot_1.addKeyword)(['pilula', 'pílula', 'dica', 'acelera', '1'])
     .addAction(async (ctx, { flowDynamic }) => {
-    await flowDynamic('Preparando seu devocional de hoje...');
-    const { versiculo, reflexao } = await (0, gemini_1.generateDevocional)();
+    await flowDynamic('Gerando sua pílula Acelera>AI de hoje...');
+    const { headline, insight, nextStep } = await (0, gemini_1.generateDevocional)();
     await flowDynamic([
-        '*Devocional do Dia*',
+        '*Pílula Acelera>AI*',
         '',
-        `_"${versiculo}"_`,
+        `_${headline}_`,
         '',
-        reflexao,
+        insight,
         '',
-        'Que esse versículo te abençoe hoje!'
+        `Próximo passo: ${nextStep}`,
+        '',
+        'Qual horário de 15min hoje ou amanhã pra alinharmos isso?'
     ]);
 });
 //# sourceMappingURL=devocionalFlow.js.map

@@ -13,7 +13,7 @@ function formatQuestion(question) {
         .map((opt, i) => `${['A', 'B', 'C', 'D'][i]}. ${opt}`)
         .join('\n');
     return [
-        `*Quiz Bíblico* (${question.points} pts)`,
+        `*Diagnóstico Acelera>AI* (${question.points} pts)`,
         '',
         question.question,
         '',

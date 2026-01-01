@@ -3,13 +3,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.quizExitFlow = exports.quizAnswerFlow = exports.quizFlow = void 0;
 const bot_1 = require("@builderbot/bot");
 const quizManager_1 = require("../modules/quiz/quizManager");
-exports.quizFlow = (0, bot_1.addKeyword)(['quiz', 'jogar', 'jogo', '2'])
+exports.quizFlow = (0, bot_1.addKeyword)(['quiz', 'diagnostico', 'diagnóstico', 'jogar', '2'])
     .addAction(async (ctx, { flowDynamic }) => {
     if ((0, quizManager_1.hasActiveQuiz)(ctx.from)) {
         await flowDynamic('Voce ja tem um quiz ativo! Responda ou digite "sair".');
         return;
     }
-    await flowDynamic('*Quiz Biblico!* Vamos testar seu conhecimento. 5 perguntas!');
+    await flowDynamic('*Diagnóstico Acelera>AI!* 5 perguntas rápidas para calibrar sua copy.');
     const question = await (0, quizManager_1.startQuiz)(ctx.from);
     await flowDynamic(question);
 });
@@ -26,7 +26,7 @@ exports.quizAnswerFlow = (0, bot_1.addKeyword)(['a', 'b', 'c', 'd'])
             await flowDynamic(`*Errou!*\n\n${result.explanation}`);
         }
         if (result.finished) {
-            await flowDynamic(`\n*Quiz Finalizado!* Total: ${result.totalPoints} pontos\n\nDigite "quiz" para jogar de novo!`);
+            await flowDynamic(`\n*Diagnóstico finalizado!* Total: ${result.totalPoints} pontos\n\nQuer que eu aplique os ajustes com você em 15min? Posso hoje 14:30 ou amanhã 9:00.`);
         }
         else if (result.nextQuestion) {
             await flowDynamic(result.nextQuestion);

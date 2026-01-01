@@ -9,20 +9,20 @@ const database_1 = require("../../services/database");
 const gemini_1 = require("../../services/gemini");
 function startDevocionalScheduler(sendMessage) {
     node_cron_1.default.schedule('0 6 * * *', async () => {
-        console.log('[Scheduler] Enviando devocional diário...');
+        console.log('[Scheduler] Enviando pílula Acelera>AI diária...');
         try {
-            const { versiculo, reflexao } = await (0, gemini_1.generateDevocional)();
+            const { headline, insight, nextStep } = await (0, gemini_1.generateDevocional)();
             const users = await database_1.User.find({ 'preferences.devocionalEnabled': true });
             const message = [
-                'Bom dia, meu filho!',
+                'Bom dia! Aqui vai sua pílula Acelera>AI:',
                 '',
-                '*Devocional do Dia*',
+                `*${headline}*`,
                 '',
-                `_"${versiculo}"_`,
+                insight,
                 '',
-                reflexao,
+                `Próximo passo: ${nextStep}`,
                 '',
-                'Tenha um dia abençoado!'
+                'Qual melhor horário de 15min hoje ou amanhã pra alinharmos?'
             ].join('\n');
             for (const user of users) {
                 try {
@@ -37,6 +37,6 @@ function startDevocionalScheduler(sendMessage) {
             console.error('[Scheduler] Erro no devocional:', error);
         }
     });
-    console.log('[Scheduler] Devocional diário configurado (06:00)');
+    console.log('[Scheduler] Pílula diária configurada (06:00)');
 }
 //# sourceMappingURL=scheduler.js.map

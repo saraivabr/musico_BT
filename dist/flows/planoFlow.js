@@ -4,9 +4,10 @@ exports.planoProximoFlow = exports.planoSelectFlow = exports.planoFlow = void 0;
 const bot_1 = require("@builderbot/bot");
 const planManager_1 = require("../modules/planos/planManager");
 const plans_1 = require("../modules/planos/plans");
-exports.planoFlow = (0, bot_1.addKeyword)(['plano', 'planos', 'leitura', '4'])
+exports.planoFlow = (0, bot_1.addKeyword)(['plano', 'planos', 'implementacao', 'sprint', '4'])
     .addAction(async (ctx, { flowDynamic }) => {
     await flowDynamic((0, planManager_1.listPlans)());
+    await flowDynamic('Qual horário de 15min hoje ou amanhã funciona para alinharmos a implementação?');
 });
 exports.planoSelectFlow = (0, bot_1.addKeyword)(['1', '2'])
     .addAction(async (ctx, { flowDynamic, state }) => {
@@ -26,7 +27,7 @@ exports.planoProximoFlow = (0, bot_1.addKeyword)(['próximo', 'proximo', 'termin
         await flowDynamic(message);
     }
     else {
-        await flowDynamic('Você não está em um plano. Digite "planos" para começar!');
+        await flowDynamic('Você não está em um plano de implementação. Digite "planos" para começar!');
     }
 });
 //# sourceMappingURL=planoFlow.js.map

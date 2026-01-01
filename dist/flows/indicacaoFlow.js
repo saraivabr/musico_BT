@@ -3,8 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.indicacaoPhoneFlow = exports.indicacaoFlow = void 0;
 const bot_1 = require("@builderbot/bot");
 const referralManager_1 = require("../modules/indicacao/referralManager");
-exports.indicacaoFlow = (0, bot_1.addKeyword)(['indicar', 'amigo precisa', '7'])
-    .addAnswer('*Indicar um Amigo*\n\nQue lindo! Você quer ajudar alguém.\n\nMe conta: qual é o nome da pessoa e o que está acontecendo?', { capture: true }, async (ctx, { flowDynamic, state }) => {
+exports.indicacaoFlow = (0, bot_1.addKeyword)(['indicar', 'lead', 'parceiro', '7'])
+    .addAnswer('*Indicar lead ou parceiro*\n\nVou abordar de forma consultiva com o método Acelera>AI (Saraiva.AI).\n\nMe conta: qual é o nome e o contexto (nicho, oferta, urgência)?', { capture: true }, async (ctx, { flowDynamic, state }) => {
     await state.update({ referralContext: ctx.body, awaitingReferralPhone: true });
     await flowDynamic('Entendi. Agora me manda o número de WhatsApp dela.\n\n_Formato: (11) 99999-9999_');
 });
@@ -30,8 +30,8 @@ exports.indicacaoPhoneFlow = (0, bot_1.addKeyword)(['0', '1', '2', '3', '4', '5'
         await flowDynamic([
             '*Mensagem enviada!*',
             '',
-            'Acabei de mandar uma mensagem carinhosa pro seu amigo.',
-            'Você fez algo muito bonito hoje!'
+            'Acabei de mandar uma abordagem inicial.',
+            'Te aviso quando ele responder.'
         ]);
     }
     catch {

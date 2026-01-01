@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Iniciando deploy do Jesus Cristo Bot..."
+echo "Iniciando deploy do Saraiva.AI - Acelera>AI Bot..."
 
 # Check for GEMINI_API_KEY
 if [ -z "$GEMINI_API_KEY" ]; then
@@ -16,4 +16,4 @@ docker-compose down
 docker-compose up -d --build
 
 echo "Deploy concluido!"
-echo "Logs: docker-compose logs -f jesus-bot"
+echo "Logs: docker-compose logs -f acelera-bot"

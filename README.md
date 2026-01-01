@@ -1,17 +1,15 @@
-# Jesus Cristo Bot
+# Saraiva.AI - Acelera>AI Bot
 
-Chatbot espiritual para WhatsApp com IA avancada (Google Gemini).
+IA vendedora para WhatsApp (Saraiva.AI), especializada em implementar o método Acelera>AI com Gemini. Sempre conduz para agenda de 15 minutos (sem falar valores).
 
 ## Funcionalidades
 
-- **Companheiro Espiritual** - Conversas com sabedoria biblica e empatia
-- **Devocional Diario** - Enviado automaticamente as 6h
-- **Quiz Biblico** - Teste seus conhecimentos
-- **Pedidos de Oracao** - Ore junto com Jesus
-- **Planos de Leitura** - 21 dias, Primeiros Passos
-- **Evangelismo** - Jornada guiada para conhecer Jesus
-- **Busca Biblica** - Encontre versiculos por tema
-- **Indicacao de Amigos** - Ajude quem precisa
+- **Pílula diária** - Insight + CTA para avançar vendas (06h)
+- **Diagnóstico rápido** - 5 perguntas sobre copy e funil
+- **Estratégia imediata** - Microplanos de venda em bullets
+- **Planos de implementação** - Sprints de 7 e 14 dias
+- **Playbooks e copys** - Exemplos prontos por nicho/objeção
+- **Indicação de leads** - Abordagem consultiva automatizada
 
 ## Requisitos
 
@@ -24,7 +22,7 @@ Chatbot espiritual para WhatsApp com IA avancada (Google Gemini).
 ```bash
 # Clonar
 git clone <repo>
-cd jesus-cristo-bot
+cd saraiva-ai-bot
 
 # Instalar
 npm install
@@ -49,12 +47,12 @@ export GEMINI_API_KEY=sua_chave
 | Comando | Descricao |
 |---------|-----------|
 | menu | Ver opcoes |
-| devocional | Versiculo do dia |
-| quiz | Jogar quiz |
-| orar | Pedido de oracao |
-| planos | Planos de leitura |
-| buscar | Buscar na Biblia |
-| indicar | Indicar amigo |
+| pilula | Pílula Acelera>AI |
+| quiz | Diagnóstico rápido |
+| estrategia | Plano imediato + convite de 15min |
+| planos | Planos de implementação |
+| playbook | Sugestão de copys |
+| indicar | Indicar lead/parceiro |
 
 ## Arquitetura
 

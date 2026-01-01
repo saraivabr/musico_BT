@@ -18,9 +18,9 @@ async function startPlan(phone, planId) {
         '',
         `Dia 1 de ${plan.duration}`,
         `*${dayContent.title}*`,
-        `Leitura: ${dayContent.reading}`,
+        `Ação: ${dayContent.reading}`,
         '',
-        'Leia com calma e depois me conta o que entendeu!'
+        'Execute e me conte o retorno para eu ajustar com você. Topa 15min hoje 14:30 ou amanhã 9:00 para alinharmos?'
     ].join('\n');
 }
 async function getNextDay(phone) {
@@ -41,14 +41,14 @@ async function getNextDay(phone) {
     return [
         `*Dia ${nextDay} de ${plan.duration}*`,
         `*${dayContent?.title}*`,
-        `Leitura: ${dayContent?.reading}`,
+        `Ação: ${dayContent?.reading}`,
         '',
-        'Bons estudos!'
+        'Me diga o resultado de ontem para eu calibrar o próximo passo. Se quiser, alinhamos em 15min (hoje ou amanhã).'
     ].join('\n');
 }
 function listPlans() {
     return [
-        '*Planos de Leitura*',
+        '*Planos de Implementação Acelera>AI*',
         '',
         ...plans_1.plans.map((p, i) => `${i + 1}. *${p.name}* (${p.duration} dias)\n   _${p.description}_`),
         '',

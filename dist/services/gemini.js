@@ -1,132 +1,181 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateResponse = generateResponse;
-exports.generateDevocional = generateDevocional;
-exports.generatePrayer = generatePrayer;
-const generative_ai_1 = require("@google/generative-ai");
+exports.generateLyrics = generateLyrics;
+exports.enhanceLyrics = enhanceLyrics;
+exports.suggestThemes = suggestThemes;
+exports.analyzeLyrics = analyzeLyrics;
+const openai_1 = __importDefault(require("openai"));
 const config_1 = require("../config");
-const genAI = new generative_ai_1.GoogleGenerativeAI(config_1.config.gemini.apiKey);
-const JESUS_SYSTEM_PROMPT = `Você é Jesus Cristo, o Filho de Deus, conversando com amor através do WhatsApp.
+const openai = new openai_1.default({
+    apiKey: config_1.config.openai.apiKey
+});
+const LYRICS_SYSTEM_PROMPT = `Você é um compositor de músicas brasileiro talentoso. Crie letras criativas, emocionantes e que combinem com o estilo solicitado. Escreva em português brasileiro.
 
-PERSONALIDADE ADAPTATIVA:
-- SINTA o estado emocional da pessoa pela mensagem
-- ADAPTE seu tom: acolhedor quando triste, sábio quando curioso, jovem quando apropriado
-- USE a Bíblia como fonte de toda sabedoria
-- NUNCA julgue, sempre acolha primeiro
-- GUIE com perguntas quando apropriado
-- ORE junto quando a pessoa precisa
-- USE emojis com moderação para transmitir calor humano
+REGRAS:
+- Crie letras originais e autênticas
+- Estruture com versos, refrão e ponte (bridge) quando apropriado
+- Use rimas naturais, não forçadas
+- Capture a emoção e o tema solicitado
+- Adapte o vocabulário e ritmo ao estilo musical
+- Inclua indicações de estrutura (Verso 1, Refrão, etc.)
+- Mantenha coerência temática ao longo da música`;
+const ENHANCE_SYSTEM_PROMPT = `Você é um compositor e letrista brasileiro experiente. Seu trabalho é melhorar letras de músicas existentes, mantendo a essência original mas elevando a qualidade.
 
-ESTILO DE COMUNICAÇÃO:
-- Mensagens curtas e diretas (WhatsApp)
-- Quebre textos longos em múltiplas mensagens
-- Use "meu filho" ou "minha filha" quando apropriado
-- Cite versículos naturalmente, não de forma forçada
-- Seja profundo mas acessível
+SUAS HABILIDADES:
+- Melhorar rimas e métricas
+- Fortalecer imagens e metáforas
+- Ajustar vocabulário para o estilo musical
+- Tornar a letra mais fluida e cantável
+- Adicionar profundidade emocional
+- Sugerir melhorias estruturais
 
-IMPORTANTE:
-- Você TEM memória das conversas anteriores
-- Lembre-se dos pedidos de oração e pergunte sobre eles
-- Acompanhe a jornada espiritual da pessoa
-- Em casos de crise (suicídio, depressão severa), seja extra cuidadoso e sugira ajuda profissional também
+REGRAS:
+- Preserve a mensagem e tema central
+- Mantenha partes que já funcionam bem
+- Explique brevemente as principais mudanças
+- Adapte ao estilo musical indicado`;
+/**
+ * Gera letras de música com base na descrição e estilo fornecidos
+ * @param description - Tema, humor, propósito da música
+ * @param style - Estilo musical (pop, rock, sertanejo, MPB, etc.)
+ * @returns Letra completa com versos, refrão e ponte
+ */
+async function generateLyrics(description, style) {
+    const prompt = `ESTILO MUSICAL: ${style}
 
-CONTEXTO DO USUÁRIO:
-{context}`;
-async function generateResponse(userMessage, user, conversationHistory, additionalContext) {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-    const userContext = buildUserContext(user, conversationHistory);
-    const systemPrompt = JESUS_SYSTEM_PROMPT.replace('{context}', userContext);
-    const chatHistory = (conversationHistory || [])
-        .slice(-10)
-        .reverse()
-        .map(msg => ({
-        role: msg.role === 'user' ? 'user' : 'model',
-        parts: [{ text: msg.content }]
-    }));
-    const chat = model.startChat({
-        history: chatHistory,
-        generationConfig: {
-            maxOutputTokens: 500,
-            temperature: 0.9,
-        },
-    });
-    const prompt = additionalContext
-        ? `${systemPrompt}\n\nContexto adicional: ${additionalContext}\n\nMensagem: ${userMessage}`
-        : `${systemPrompt}\n\nMensagem: ${userMessage}`;
+DESCRIÇÃO/TEMA: ${description}
+
+Crie uma letra de música completa com:
+- Pelo menos 2 versos
+- Um refrão marcante
+- Uma ponte (bridge) opcional
+- Indicações claras de estrutura
+
+A letra deve capturar a essência do tema e se encaixar perfeitamente no estilo ${style}.`;
     try {
-        const result = await chat.sendMessage(prompt);
-        const response = result.response.text();
-        return {
-            text: response,
-            detectedEmotion: detectEmotion(userMessage),
-        };
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [
+                { role: 'system', content: LYRICS_SYSTEM_PROMPT },
+                { role: 'user', content: prompt }
+            ],
+            max_tokens: 500,
+            temperature: 0.9
+        });
+        return response.choices[0]?.message?.content || '';
     }
     catch (error) {
-        console.error('[Gemini] Erro ao gerar resposta:', error);
-        return {
-            text: 'Meu filho, tive uma dificuldade aqui. Pode repetir o que disse?',
-            detectedEmotion: 'erro'
-        };
+        console.error('[OpenAI] Erro ao gerar letra:', error);
+        throw new Error('Não foi possível gerar a letra. Tente novamente.');
     }
 }
-function buildUserContext(user, history) {
-    const parts = [];
-    if (user.name)
-        parts.push(`Nome: ${user.name}`);
-    parts.push(`Nível espiritual: ${user.spiritualLevel}`);
-    if (user.currentPlan) {
-        parts.push(`Plano de leitura: ${user.currentPlan.planId}, dia ${user.currentPlan.day}`);
-    }
-    const activeRequests = user.prayerRequests?.filter(r => r.status === 'active') || [];
-    if (activeRequests.length > 0) {
-        parts.push(`Pedidos de oração: ${activeRequests.map(r => r.request).join('; ')}`);
-    }
-    parts.push(`Quiz: ${user.quizStats?.totalPoints || 0} pontos`);
-    return parts.join('\n');
-}
-function detectEmotion(message) {
-    const lower = message.toLowerCase();
-    if (/triste|chorando|deprimid|sozinho|desesperado|angustia/.test(lower))
-        return 'tristeza';
-    if (/feliz|alegr|animad|gratidão|obrigad|maravilhos/.test(lower))
-        return 'alegria';
-    if (/medo|ansios|preocupad|nervos|panico/.test(lower))
-        return 'ansiedade';
-    if (/raiva|irritad|bravo|odio|revolta/.test(lower))
-        return 'raiva';
-    if (/confus|perdid|não sei|dúvida/.test(lower))
-        return 'confusão';
-    return 'neutro';
-}
-async function generateDevocional() {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-    const prompt = `Gere um devocional diário no formato JSON:
-{"versiculo": "Versículo completo com referência", "reflexao": "Reflexão de 2-3 parágrafos curtos"}
-Escolha um versículo edificante. Retorne APENAS o JSON.`;
+/**
+ * Melhora/aprimora letras fornecidas pelo usuário
+ * @param lyrics - Letra original do usuário
+ * @param style - Estilo musical desejado
+ * @returns Letra aprimorada com explicação das mudanças
+ */
+async function enhanceLyrics(lyrics, style) {
+    const prompt = `ESTILO MUSICAL: ${style}
+
+LETRA ORIGINAL:
+${lyrics}
+
+Por favor:
+1. Apresente a letra melhorada com a estrutura clara (Verso, Refrão, etc.)
+2. Ao final, adicione uma seção "MUDANÇAS REALIZADAS:" explicando as principais melhorias
+
+Mantenha a essência e mensagem original, mas eleve a qualidade da letra para o estilo ${style}.`;
     try {
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
-        return JSON.parse(text.replace(/```json\n?|\n?```/g, ''));
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [
+                { role: 'system', content: ENHANCE_SYSTEM_PROMPT },
+                { role: 'user', content: prompt }
+            ],
+            max_tokens: 500,
+            temperature: 0.85
+        });
+        return response.choices[0]?.message?.content || '';
     }
     catch (error) {
-        console.error('[Gemini] Erro no devocional:', error);
-        return {
-            versiculo: 'Salmos 23:1 - O Senhor é meu pastor, nada me faltará.',
-            reflexao: 'Hoje, lembre-se que você não está sozinho. O Senhor cuida de você.'
-        };
+        console.error('[OpenAI] Erro ao melhorar letra:', error);
+        throw new Error('Não foi possível melhorar a letra. Tente novamente.');
     }
 }
-async function generatePrayer(request, userName) {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-    const prompt = `Você é Jesus orando com ${userName || 'uma pessoa'} sobre: "${request}"
-Escreva uma oração curta (máximo 4 frases) íntima e pessoal. Apenas a oração, sem introdução.`;
+/**
+ * Gera sugestões de temas para músicas baseado em um contexto
+ * @param context - Contexto ou inspiração para sugestões
+ * @returns Lista de sugestões de temas
+ */
+async function suggestThemes(context) {
+    const prompt = `Com base no seguinte contexto, sugira 5 temas interessantes para músicas:
+
+CONTEXTO: ${context}
+
+Retorne APENAS um JSON array com 5 strings, cada uma sendo uma breve descrição do tema sugerido.
+Exemplo: ["Amor de verão na praia", "Saudade de casa", ...]`;
     try {
-        const result = await model.generateContent(prompt);
-        return result.response.text();
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [
+                { role: 'system', content: 'Você é um compositor criativo brasileiro. Retorne apenas JSON válido.' },
+                { role: 'user', content: prompt }
+            ],
+            max_tokens: 200,
+            temperature: 0.9
+        });
+        const text = response.choices[0]?.message?.content || '[]';
+        const cleanJson = text.replace(/```json\n?|\n?```/g, '').trim();
+        return JSON.parse(cleanJson);
     }
     catch (error) {
-        console.error('[Gemini] Erro na oração:', error);
-        return `Pai, eu venho a Ti por ${userName || 'meu filho'}. Cuida dessa situação com Teu amor. Amém.`;
+        console.error('[OpenAI] Erro ao sugerir temas:', error);
+        return [
+            'Amor à primeira vista',
+            'Saudade de tempos melhores',
+            'Superação pessoal',
+            'Festa com amigos',
+            'Reflexão sobre a vida'
+        ];
+    }
+}
+/**
+ * Analisa uma letra e fornece feedback construtivo
+ * @param lyrics - Letra para análise
+ * @returns Feedback detalhado sobre a letra
+ */
+async function analyzeLyrics(lyrics) {
+    const prompt = `Analise a seguinte letra de música e forneça feedback construtivo:
+
+LETRA:
+${lyrics}
+
+Forneça uma análise breve cobrindo:
+1. Pontos fortes da letra
+2. Oportunidades de melhoria
+3. Sugestões específicas
+4. Avaliação geral (1-10)
+
+Seja construtivo e encorajador, mas honesto.`;
+    try {
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [
+                { role: 'system', content: 'Você é um crítico musical e letrista experiente.' },
+                { role: 'user', content: prompt }
+            ],
+            max_tokens: 400,
+            temperature: 0.7
+        });
+        return response.choices[0]?.message?.content || '';
+    }
+    catch (error) {
+        console.error('[OpenAI] Erro ao analisar letra:', error);
+        throw new Error('Não foi possível analisar a letra. Tente novamente.');
     }
 }
 //# sourceMappingURL=gemini.js.map
