@@ -41,7 +41,7 @@ const main = async () => {
         welcomeFlow_1.welcomeFlow,
         menuFlow_1.menuFlow,
         criarMusicaFlow_1.criarMusicaFlow,
-        criarMusicaFlow_1.criarMusicaActionFlow,
+        criarMusicaFlow_1.criarMusicaConversationFlow,
         minhasMusicasFlow_1.minhasMusicasFlow,
         minhasMusicasFlow_1.reenviarMusicaFlow,
         comprarCreditosFlow_1.comprarCreditosFlow,

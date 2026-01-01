@@ -1,219 +1,187 @@
 import { addKeyword, EVENTS } from '@builderbot/bot'
 import { BaileysProvider } from '@builderbot/provider-baileys'
 import { v4 as uuidv4 } from 'uuid'
-import { getOrCreateUser, deductCredit, addMusic, updateMusicStatus, getCredits } from '../services/database'
+import { getOrCreateUser, deductCredit, addMusic, updateMusicStatus } from '../services/database'
 import { generateMusic, waitForCompletion } from '../services/sunoApi'
 import { generateLyrics } from '../services/gemini'
 import { processAudioMessage, isAudioMessage } from '../services/transcription'
+import { analyzeUserMessage, generateBotResponse } from '../services/conversationAnalysis'
 import { MUSIC_STYLES } from '../types/user'
 import type { IMusic } from '../types/user'
 
-// Formatar lista de estilos
-function formatStyles(): string {
-  return MUSIC_STYLES.map((s, i) => `${i + 1}️⃣ ${s.emoji} ${s.name}`).join('\n')
+interface MusicCreationState {
+  conversationHistory: Array<{ role: string; content: string }>
+  description?: string
+  lyrics?: string
+  style?: string
 }
 
-function getStyleById(index: number): typeof MUSIC_STYLES[number] | undefined {
-  return MUSIC_STYLES[index - 1]
-}
-
-function getStyleByName(name: string): typeof MUSIC_STYLES[number] | undefined {
-  const lower = name.toLowerCase()
-  return MUSIC_STYLES.find(s =>
-    s.name.toLowerCase().includes(lower) ||
-    s.id.toLowerCase().includes(lower)
-  )
-}
-
-// Flow principal para criar música
-export const criarMusicaFlow = addKeyword<BaileysProvider>(['criar', 'musica', 'música', 'nova', '1'])
+// Flow conversacional para criar música
+export const criarMusicaFlow = addKeyword<BaileysProvider>([
+  'criar',
+  'musica',
+  'música',
+  'nova',
+  '1',
+  'compor',
+  'canção'
+])
   .addAction(async (ctx, { flowDynamic, state, gotoFlow }) => {
     const phone = ctx.from
     const user = await getOrCreateUser(phone)
-    const credits = user.credits
 
-    if (credits < 1) {
+    if (user.credits < 1) {
       await flowDynamic([
         `❌ *Você não tem créditos!*\n\nCada música custa *1 crédito*.\n\n💰 Digite *comprar* para adquirir créditos.`
       ])
       return
     }
 
-    await flowDynamic([
-      `🎵 *Criar Música*\n\nVocê tem *${credits}* crédito${credits !== 1 ? 's' : ''}.\n\n*Como você quer criar?*`,
-      `1️⃣ *Descrever* - Você fala (áudio 🎤) ou escreve a ideia`,
-      `2️⃣ *Enviar letra* - Você envia a letra pronta e eu faço a música`,
-      `\nDigite *1* ou *2*:`
-    ])
-
+    // Inicializar contexto de conversa
     await state.update({
-      musicCreationStep: 'choosing_mode',
-      musicData: {}
+      creatingMusic: true,
+      musicState: {
+        conversationHistory: [],
+        description: undefined,
+        lyrics: undefined,
+        style: undefined
+      } as MusicCreationState
     })
+
+    await flowDynamic([
+      `🎵 *Opa, vamos criar uma música!*\n\nMe conta tudo: qual a vibe? O que você imagina? Pode ser um sentimento, uma história, uma festa... o que for! 🎤`
+    ])
   })
 
-// Flow para processar escolhas durante criação
-export const criarMusicaActionFlow = addKeyword<BaileysProvider>(EVENTS.ACTION)
+// Flow conversacional contínuo
+export const criarMusicaConversationFlow = addKeyword<BaileysProvider>(EVENTS.ACTION)
   .addAction(async (ctx, { flowDynamic, state, endFlow, provider }) => {
     const currentState = await state.getMyState()
-    const step = currentState?.musicCreationStep
+
+    // Se não está criando música, ignora
+    if (!currentState?.creatingMusic) return
+
     const phone = ctx.from
-    const input = ctx.body.trim()
+    const musicState: MusicCreationState = currentState.musicState || {
+      conversationHistory: [],
+      description: undefined,
+      lyrics: undefined,
+      style: undefined
+    }
 
-    if (!step) return
+    let userMessage = ctx.body.trim()
 
-    // Passo 1: Escolher modo (descrição ou letra pronta)
-    if (step === 'choosing_mode') {
-      if (input === '1') {
-        await state.update({
-          musicCreationStep: 'getting_description',
-          musicData: { isCustomLyrics: false }
-        })
+    // Se for áudio, transcrever
+    if (isAudioMessage(ctx.message)) {
+      try {
+        await flowDynamic(['🎤 *Estou ouvindo...*'])
+        userMessage = await processAudioMessage(ctx.message.media.url)
+        console.log(`[AUDIO] Transcrição: ${userMessage}`)
+      } catch (error: any) {
         await flowDynamic([
-          `✍️ *Descreva sua música*\n\nMe conte:\n- Qual o tema ou história?\n- Pra quem é? (presente, homenagem, etc)\n- Qual o clima? (alegre, romântico, animado...)\n\n_Exemplo: "Uma música de aniversário pro meu filho de 5 anos, alegre e divertida"_`
+          `❌ Não consegui entender o áudio.\n\nTenta descrever em texto ou manda outro áudio?`
         ])
-      } else if (input === '2') {
-        await state.update({
-          musicCreationStep: 'getting_lyrics',
-          musicData: { isCustomLyrics: true }
-        })
-        await flowDynamic([
-          `📝 *Envie sua letra*\n\nCole ou digite a letra completa da música.\n\n_Dica: Pode ter versos, refrão, ponte... Quanto mais detalhes, melhor!_`
-        ])
-      } else {
-        await flowDynamic('Digite *1* para descrever ou *2* para enviar letra pronta.')
-      }
-      return
-    }
-
-    // Passo 2a: Receber descrição (áudio ou texto)
-    if (step === 'getting_description') {
-      let description = input
-
-      // Se for áudio, transcrever
-      if (isAudioMessage(ctx.message)) {
-        try {
-          await flowDynamic(['🎤 *Estou escutando sua visão...*'])
-
-          const mediaUrl = ctx.message.media.url
-          description = await processAudioMessage(mediaUrl)
-
-          console.log(`[AUDIO] Transcrição: ${description}`)
-          await flowDynamic([`✅ *Entendi:* "${description}")`])
-        } catch (error: any) {
-          console.error('[AUDIO] Erro ao transcrever:', error)
-          await flowDynamic([
-            `❌ ${error.message || 'Não consegui entender o áudio.'}\n\nTenta descrever em texto ou manda outro áudio?`
-          ])
-          return
-        }
-      }
-
-      await state.update({
-        musicCreationStep: 'choosing_style',
-        musicData: {
-          ...currentState.musicData,
-          description
-        }
-      })
-      await flowDynamic([
-        `🎸 *Qual estilo musical?*\n\n${formatStyles()}\n\nDigite o *número* ou o *nome* do estilo:`
-      ])
-      return
-    }
-
-    // Passo 2b: Receber letra pronta
-    if (step === 'getting_lyrics') {
-      if (input.length < 50) {
-        await flowDynamic('❌ A letra parece muito curta. Envie pelo menos uma estrofe completa.')
         return
       }
-      await state.update({
-        musicCreationStep: 'choosing_style',
-        musicData: {
-          ...currentState.musicData,
-          lyrics: input
-        }
-      })
-      await flowDynamic([
-        `🎸 *Qual estilo musical?*\n\n${formatStyles()}\n\nDigite o *número* ou o *nome* do estilo:`
-      ])
-      return
     }
 
-    // Passo 3: Escolher estilo
-    if (step === 'choosing_style') {
-      let style = getStyleById(parseInt(input)) || getStyleByName(input)
-
-      if (!style) {
-        await flowDynamic(`❌ Estilo não encontrado. Digite um número de 1 a ${MUSIC_STYLES.length} ou o nome do estilo.`)
-        return
-      }
-
-      const musicData = {
-        ...currentState.musicData,
-        style: style
-      }
-
-      await state.update({
-        musicCreationStep: 'confirming',
-        musicData
-      })
-
-      const preview = musicData.isCustomLyrics
-        ? `📝 Letra: _${musicData.lyrics?.substring(0, 100)}..._`
-        : `💭 Descrição: _${musicData.description}_`
-
-      await flowDynamic([
-        `✅ *Confirma a criação?*\n\n${preview}\n🎸 Estilo: *${style.emoji} ${style.name}*\n💰 Custo: *1 crédito*\n\nDigite *sim* para confirmar ou *não* para cancelar.`
-      ])
-      return
-    }
-
-    // Passo 4: Confirmar e gerar
-    if (step === 'confirming') {
-      const lower = input.toLowerCase()
-
-      if (lower === 'não' || lower === 'nao' || lower === 'cancelar') {
-        await state.update({ musicCreationStep: null, musicData: {} })
-        await flowDynamic('❌ Criação cancelada. Digite *criar* para começar novamente.')
-        return endFlow()
-      }
-
-      if (lower !== 'sim' && lower !== 's' && lower !== 'confirmar') {
-        await flowDynamic('Digite *sim* para confirmar ou *não* para cancelar.')
-        return
-      }
-
-      // Debitar crédito
-      const debited = await deductCredit(phone)
-      if (!debited) {
-        await flowDynamic('❌ Créditos insuficientes. Digite *comprar* para adquirir mais.')
-        await state.update({ musicCreationStep: null, musicData: {} })
-        return endFlow()
-      }
-
-      const musicData = currentState.musicData
-      const musicId = uuidv4()
-
-      await flowDynamic([
-        `⏳ *Gerando sua música...*\n\nIsso pode levar de 2 a 4 minutos.\nVou te avisar quando ficar pronta! 🎵`
-      ])
-
-      await state.update({ musicCreationStep: null, musicData: {} })
-
-      // Gerar música em background
-      generateMusicAsync(phone, musicId, musicData, provider)
-
+    // Cancelar se disse "cancelar", "sair", etc
+    if (
+      userMessage.toLowerCase().includes('cancelar') ||
+      userMessage.toLowerCase().includes('sair') ||
+      userMessage.toLowerCase().includes('voltar')
+    ) {
+      await state.update({ creatingMusic: false, musicState: {} })
+      await flowDynamic(['❌ Criação cancelada. Digite *criar* para começar novamente.'])
       return endFlow()
     }
+
+    // Adicionar mensagem do usuário ao histórico
+    musicState.conversationHistory.push({
+      role: 'user',
+      content: userMessage
+    })
+
+    // Analisar intenção com GPT
+    const context = await analyzeUserMessage(
+      userMessage,
+      musicState.conversationHistory
+    )
+
+    // Atualizar estado com informações extraídas
+    if (context.description) musicState.description = context.description
+    if (context.lyrics) musicState.lyrics = context.lyrics
+    if (context.style) musicState.style = context.style
+
+    // Gerar resposta conversacional
+    const botResponse = await generateBotResponse(
+      userMessage,
+      context,
+      musicState.conversationHistory
+    )
+
+    // Adicionar resposta do bot ao histórico
+    musicState.conversationHistory.push({
+      role: 'assistant',
+      content: botResponse
+    })
+
+    // Salvar estado
+    await state.update({
+      creatingMusic: !context.readyToGenerate,
+      musicState
+    })
+
+    // Enviar resposta
+    await flowDynamic([botResponse])
+
+    // Se pronto, gerar música
+    if (context.readyToGenerate) {
+      await generateMusicFromContext(
+        phone,
+        musicState,
+        provider,
+        state,
+        flowDynamic
+      )
+    }
   })
+
+// Função para gerar música a partir do contexto
+async function generateMusicFromContext(
+  phone: string,
+  musicState: MusicCreationState,
+  provider: BaileysProvider,
+  state: any,
+  flowDynamic: any
+) {
+  const musicId = uuidv4()
+
+  // Debitar crédito
+  const debited = await deductCredit(phone)
+  if (!debited) {
+    await flowDynamic([
+      '❌ *Ops!* Créditos insuficientes.\n\n💰 Digite *comprar* para adquirir mais.'
+    ])
+    await state.update({ creatingMusic: false, musicState: {} })
+    return
+  }
+
+  await flowDynamic([
+    `✨ *Deixa eu criar isso pra você...*\n\nIsso pode levar alguns minutos. Já venho! 🎵`
+  ])
+
+  await state.update({ creatingMusic: false, musicState: {} })
+
+  // Gerar em background
+  generateMusicAsync(phone, musicId, musicState, provider)
+}
 
 // Função para gerar música em background
 async function generateMusicAsync(
   phone: string,
   musicId: string,
-  musicData: any,
+  musicState: MusicCreationState,
   provider: BaileysProvider
 ) {
   try {
@@ -221,25 +189,36 @@ async function generateMusicAsync(
     let generatedLyrics: string | undefined
 
     // Se é descrição, gerar letra primeiro
-    if (!musicData.isCustomLyrics) {
+    if (!musicState.lyrics) {
       console.log(`[MUSIC] Gerando letra para ${phone}...`)
-      const lyrics = await generateLyrics(musicData.description, musicData.style.name)
+      const lyrics = await generateLyrics(
+        musicState.description || '',
+        musicState.style || 'pop'
+      )
       prompt = lyrics
       generatedLyrics = lyrics
     } else {
-      prompt = musicData.lyrics
+      prompt = musicState.lyrics
     }
+
+    // Encontrar estilo correspondente
+    let styleObj = MUSIC_STYLES.find(s => s.id === musicState.style) ||
+      MUSIC_STYLES[0]
 
     // Gerar música no Suno
     console.log(`[MUSIC] Enviando para Suno API...`)
-    const taskId = await generateMusic(prompt, musicData.style.name, musicData.isCustomLyrics)
+    const taskId = await generateMusic(
+      prompt,
+      musicState.style || 'pop',
+      !!musicState.lyrics
+    )
 
-    // Salvar música no banco como "generating"
+    // Salvar no banco como "generating"
     const music: IMusic = {
       id: musicId,
-      prompt: musicData.isCustomLyrics ? musicData.lyrics : musicData.description,
-      style: musicData.style.id,
-      isCustomLyrics: musicData.isCustomLyrics,
+      prompt: musicState.lyrics || musicState.description || '',
+      style: musicState.style || 'pop',
+      isCustomLyrics: !!musicState.lyrics,
       generatedLyrics,
       status: 'generating',
       sunoTaskId: taskId,
@@ -248,8 +227,8 @@ async function generateMusicAsync(
 
     await addMusic(phone, music)
 
-    // Aguardar conclusão (polling)
-    console.log(`[MUSIC] Aguardando conclusão do taskId ${taskId}...`)
+    // Aguardar conclusão
+    console.log(`[MUSIC] Aguardando conclusão...`)
     const result = await waitForCompletion(taskId)
 
     if (result.status === 'completed' && result.songs && result.songs.length > 0) {
@@ -268,49 +247,41 @@ async function generateMusicAsync(
       // Enviar para o usuário
       await provider.sendMessage(
         phone,
-        `🎉 *Sua música ficou pronta!*\n\n🎵 *${song.title || 'Sua Música'}*\n\n📥 Ouça agora:`,
+        `🎉 *Pronto! Sua música está aqui!*\n\n🎵 *${song.title || 'Sua Música'}*`,
         {}
       )
 
       // Enviar áudio
       if (song.audioUrl) {
-        await provider.sendMessage(
-          phone,
-          '🎵 Sua música:',
-          { media: song.audioUrl }
-        )
+        await provider.sendMessage(phone, '🎵 Ouça:', {
+          media: song.audioUrl
+        })
       }
 
-      // Enviar link
+      // Enviar link e vídeo
       await provider.sendMessage(
         phone,
-        `🔗 *Link para download:*\n${song.audioUrl}\n\n${song.videoUrl ? `🎬 *Vídeo com letra:*\n${song.videoUrl}\n\n` : ''}Gostou? Digite *criar* para fazer mais músicas! 🎶`,
+        `🔗 *Download:* ${song.audioUrl}\n\n${song.videoUrl ? `🎬 *Vídeo com letra:* ${song.videoUrl}\n\n` : ''}Quer criar mais? Manda *criar* aí! 🎶`,
         {}
       )
 
       console.log(`[MUSIC] Música ${musicId} entregue para ${phone}`)
-
     } else {
-      throw new Error('Geração falhou ou não retornou músicas')
+      throw new Error('Geração falhou')
     }
-
   } catch (error: any) {
     console.error(`[MUSIC] Erro ao gerar música para ${phone}:`, error)
 
-    // Atualizar status como falha
     await updateMusicStatus(phone, musicId, {
       status: 'failed',
       errorMessage: error.message,
       completedAt: new Date()
     })
 
-    // Notificar usuário
     await provider.sendMessage(
       phone,
-      `❌ *Ops! Erro ao gerar sua música.*\n\n${error.message}\n\nSeu crédito será reembolsado. Entre em contato se o problema persistir.`,
+      `❌ *Ops! Algo deu errado.*\n\nSeu crédito foi devolvido. Tenta novamente? 🎤`,
       {}
     )
-
-    // TODO: Reembolsar crédito
   }
 }

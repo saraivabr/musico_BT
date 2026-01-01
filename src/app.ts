@@ -9,7 +9,7 @@ import qrcode from 'qrcode-terminal'
 // Flows
 import { welcomeFlow } from './flows/welcomeFlow'
 import { menuFlow } from './flows/menuFlow'
-import { criarMusicaFlow, criarMusicaActionFlow } from './flows/criarMusicaFlow'
+import { criarMusicaFlow, criarMusicaConversationFlow } from './flows/criarMusicaFlow'
 import { minhasMusicasFlow, reenviarMusicaFlow } from './flows/minhasMusicasFlow'
 import { comprarCreditosFlow, selecionarPacoteFlow, verificarPagamentoFlow } from './flows/comprarCreditosFlow'
 import { mainFlow } from './flows/mainFlow'
@@ -42,7 +42,7 @@ const main = async () => {
     welcomeFlow,
     menuFlow,
     criarMusicaFlow,
-    criarMusicaActionFlow,
+    criarMusicaConversationFlow,
     minhasMusicasFlow,
     reenviarMusicaFlow,
     comprarCreditosFlow,
