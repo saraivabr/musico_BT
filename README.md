@@ -1,44 +1,71 @@
-<p align="center">
-  <a href="https://builderbot.app/">
-    <picture>
-      <img src="https://builderbot.app/assets/thumbnail-vector.png" height="80">
-    </picture>
-    <h2 align="center">BuilderBot</h2>
-  </a>
-</p>
+# Saraiva.AI - Acelera>AI Bot
 
+IA vendedora para WhatsApp (Saraiva.AI), especializada em implementar o método Acelera>AI com Gemini. Sempre conduz para agenda de 15 minutos (sem falar valores).
 
+## Funcionalidades
 
-<p align="center">
-  <a aria-label="NPM version" href="https://www.npmjs.com/package/@builderbot/bot">
-    <img alt="" src="https://img.shields.io/npm/v/@builderbot/bot?color=%2300c200&label=%40bot-whatsapp">
-  </a>
-  <a aria-label="Join the community on GitHub" href="https://link.codigoencasa.com/DISCORD">
-    <img alt="" src="https://img.shields.io/discord/915193197645402142?logo=discord">
-  </a>
-</p>
+- **Pílula diária** - Insight + CTA para avançar vendas (06h)
+- **Diagnóstico rápido** - 5 perguntas sobre copy e funil
+- **Estratégia imediata** - Microplanos de venda em bullets
+- **Planos de implementação** - Sprints de 7 e 14 dias
+- **Playbooks e copys** - Exemplos prontos por nicho/objeção
+- **Indicação de leads** - Abordagem consultiva automatizada
 
+## Requisitos
 
-## Getting Started
+- Node.js 20+
+- MongoDB
+- Chave API do Google Gemini
 
-With this library, you can build automated conversation flows agnostic to the WhatsApp provider, set up automated responses for frequently asked questions, receive and respond to messages automatically, and track interactions with customers. Additionally, you can easily set up triggers to expand functionalities limitlessly.
+## Instalacao
+
+```bash
+# Clonar
+git clone <repo>
+cd saraiva-ai-bot
+
+# Instalar
+npm install
+
+# Configurar
+cp .env.example .env
+# Edite o .env
+
+# Iniciar
+npm run dev
+```
+
+## Deploy com Docker
+
+```bash
+export GEMINI_API_KEY=sua_chave
+./scripts/deploy.sh
+```
+
+## Comandos do Bot
+
+| Comando | Descricao |
+|---------|-----------|
+| menu | Ver opcoes |
+| pilula | Pílula Acelera>AI |
+| quiz | Diagnóstico rápido |
+| estrategia | Plano imediato + convite de 15min |
+| planos | Planos de implementação |
+| playbook | Sugestão de copys |
+| indicar | Indicar lead/parceiro |
+
+## Arquitetura
 
 ```
-npm create builderbot@latest
+src/
+├── app.ts              # Entrada principal
+├── config/             # Configuracoes
+├── flows/              # Fluxos BuilderBot
+├── modules/            # Modulos (quiz, oracao, etc)
+├── services/           # Gemini, Database
+└── types/              # Tipos TypeScript
 ```
 
+## Licenca
 
-## Documentation
-
-Visit [builderbot](https://builderbot.app/) to view the full documentation.
-
-
-## Official Course
-
-If you want to discover all the functions and features offered by the library you can take the course.
-[View Course](https://app.codigoencasa.com/courses/builderbot?refCode=LEIFER)
-
-
-## Contact Us
-- [💻 Discord](https://link.codigoencasa.com/DISCORD)
-- [👌 𝕏 (Twitter)](https://twitter.com/leifermendez)
+MIT

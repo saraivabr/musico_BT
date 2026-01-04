@@ -269,7 +269,7 @@ class BaileysProvider extends ProviderClass<WASocket> {
             const sock = makeWASocketOther({
                 logger: loggerBaileys,
                 version: [2, 3000, 1025190524] as WAVersion,
-                printQRInTerminal: false,
+                printQRInTerminal: true,
                 auth: {
                     creds: state.creds,
                     keys: makeCacheableSignalKeyStore(state.keys, loggerBaileys),

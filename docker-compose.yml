@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  acelera-bot:
+    build: .
+    container_name: acelera-bot
+    restart: unless-stopped
+    ports:
+      - "3008:3008"
+    environment:
+      - PORT=3008
+      - MONGODB_URI=mongodb://mongo:27017/acelera-bot
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - BOT_NAME=Saraiva.AI
+    depends_on:
+      - mongo
+    volumes:
+      - ./bot_sessions:/app/bot_sessions
+
+  mongo:
+    image: mongo:7
+    container_name: acelera-mongo
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+
+volumes:
+  mongo_data:
